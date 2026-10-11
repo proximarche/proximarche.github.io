@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14532d"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>ProxiMarché</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#f3f5ef;--cd:#fff;--tx:#14231a;--mu:#68756b;--br:#1f8a4c;--br2:#14532d;--on:#fff;--sf:#e6f3ea;--bd:#e3e7dc;--or:#ea580c;--of:#ffedd5}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1511;--cd:#19211b;--tx:#edf3ee;--mu:#93a197;--br:#4ade80;--br2:#0b3d20;--on:#0b2815;--sf:#1f3326;--bd:#2a342c;--or:#fb923c;--of:#3a2410}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,sans-serif;max-width:560px;margin:auto;padding-bottom:90px}
+header{background:linear-gradient(135deg,var(--br2),#1f8a4c);color:#fff;padding:calc(env(safe-area-inset-top) + 18px) 18px 22px;border-radius:0 0 26px 26px}
+header h1{margin:0;font-size:24px}header p{margin:2px 0 0;opacity:.85;font-size:13px}
+main{padding:0 14px}nav{position:fixed;bottom:0;left:0;right:0;max-width:560px;margin:auto;display:flex;background:var(--cd);border-top:1px solid var(--bd);padding:4px 4px calc(env(safe-area-inset-bottom) + 4px)}
+nav button{flex:1;border:0;background:none;color:var(--mu);padding:6px 2px;font-size:11px;position:relative}nav i{display:block;font-style:normal;font-size:21px}nav .on{color:var(--br);font-weight:700}
+nav b{position:absolute;top:2px;right:22%;background:var(--or);color:#fff;border-radius:99px;font-size:10px;padding:0 5px}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 2px 8px #0000000d}
+input{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--bd);background:var(--cd);color:var(--tx);font-size:16px;margin:3px 0}
+.sb{margin-top:-20px;position:relative}.sb input{box-shadow:0 6px 18px #0002;border:0;padding:16px}
+button.b,a.b{background:var(--br);color:var(--on);border:0;border-radius:12px;padding:11px 16px;font-size:15px;font-weight:600;text-decoration:none;display:inline-block}
+button.g,a.g{background:var(--sf);color:var(--br);border:0;border-radius:10px;padding:8px 12px;font-size:14px;text-decoration:none;display:inline-block}
+.r{display:flex;justify-content:space-between;align-items:center;gap:8px}.m{color:var(--mu);font-size:13px}.p{font-weight:800;color:var(--br);font-size:18px}
+.tag{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--sf);color:var(--br);white-space:nowrap}.tag.x{background:var(--of);color:var(--or)}
+.ch{display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px}.ch button{border:1px solid var(--bd);background:var(--cd);color:var(--tx);border-radius:99px;padding:7px 13px;font-size:14px;white-space:nowrap}.ch .on{background:var(--br);color:var(--on);border-color:var(--br)}
+.av{width:38px;height:38px;border-radius:12px;background:var(--sf);display:grid;place-items:center;font-size:20px;flex:none}
+.best{background:var(--of);color:var(--or);font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px}
+h3{margin:20px 0 4px;font-size:17px}.sel{display:flex;gap:8px}.sel>*{flex:1}.em{text-align:center;padding:30px 10px;color:var(--mu)}.em i{font-size:42px;font-style:normal;display:block}
+.sk{height:90px;border-radius:18px;background:var(--bd);margin:12px 0;animation:p 1.2s infinite}@keyframes p{50%{opacity:.5}}
+#t{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);background:#14231a;color:#fff;padding:11px 18px;border-radius:99px;opacity:0;transition:.25s;pointer-events:none;font-size:14px;z-index:9;max-width:90%}#t.s{opacity:1;transform:translate(-50%,0)}
+.done{text-decoration:line-through;opacity:.5}
+</style></head><body>
+<header><h1>🛒 ProxiMarché</h1><p>Les petits commerces près de chez vous</p></header>
+<main id="app"></main><nav id="nav"></nav><div id="t"></div>
+<script>
+const sb=supabase.createClient("https://tytcrpbooehvcfmsvskd.supabase.co","sb_publishable_GKA7NR7_BJ56uErANBLk0Q_TgFxPolR");
+const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem("pm_"+k))||d}catch(e){return d}},SV=(k,v)=>{try{localStorage.setItem("pm_"+k,JSON.stringify(v))}catch(e){}};
+let S=[],PR=[],me=null,pos=null,tab=0,q="",loading=true,onlyOpen=false,onlyFav=false,byDist=false,list=LS("list",[]),done=LS("done",[]),fav=LS("fav",[]),alerts=LS("al",[]);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const H=new Date().getHours(),open=s=>H>=s.open_hour&&H<s.close_hour,e=n=>(+n).toFixed(2).replace(".",",")+" €";
+function toast(m){t.textContent=m;t.className="s";clearTimeout(window.tt);window.tt=setTimeout(()=>t.className="",2400)}
+function km(s){if(!pos||s.lat==null)return null;const r=x=>x*Math.PI/180,a=Math.sin(r(s.lat-pos.lat)/2)**2+Math.cos(r(pos.lat))*Math.cos(r(s.lat))*Math.sin(r(s.lng-pos.lng)/2)**2;return 12742*Math.asin(Math.sqrt(a))}
+const kt=s=>km(s)==null?"":"📍 "+km(s).toFixed(1)+" km";
+const go_=s=>s&&s.lat!=null?`<a class=g target=_blank rel=noopener href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}">🧭 Itinéraire</a>`:"";
+const my=()=>me&&S.find(s=>s.owner_id==me.id);
+async function load(){const a=await sb.from("shops").select("*,products(*)");if(a.error)toast("Erreur : "+a.error.message);S=(a.data||[]).map(s=>({...s,p:Object.fromEntries((s.products||[]).map(x=>[x.name,+x.price]))}));
+ const b=await sb.from("promos").select("*,shops(name,lat,lng)").gt("ends_at",new Date().toISOString()).order("ends_at");PR=b.data||[];loading=false}
+async function init(){const s=(await sb.auth.getSession()).data.session;me=s?s.user:null;await load();render()}
+function loc(){navigator.geolocation.getCurrentPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};toast("📍 Position activée");render()},()=>toast("Position refusée"))}
+const all=()=>[...new Set(S.flatMap(s=>Object.keys(s.p)))].sort();
+const dl=()=>`<datalist id=dl>${all().map(a=>`<option>${esc(a)}</option>`).join("")}</datalist>`;
+const pop=()=>{const c={};S.forEach(s=>Object.keys(s.p).forEach(k=>c[k]=(c[k]||0)+1));return Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,8)};
+function rows(){const k=q.toLowerCase();return S.map(s=>({s,k:Object.keys(s.p).filter(x=>x.includes(k))})).filter(x=>x.k.length&&(!onlyOpen||open(x.s))&&(!onlyFav||fav.includes(x.s.id)))
+ .sort((a,b)=>byDist?(km(a.s)??99)-(km(b.s)??99):Math.min(...a.k.map(x=>a.s.p[x]))-Math.min(...b.k.map(x=>b.s.p[x])))}
+function res(){if(!q){const al=alerts.map(a=>{const f=S.find(s=>Object.keys(s.p).some(x=>x.includes(a)));return `<div class="r c"><span>🔔 ${esc(a)}</span><span class="tag ${f?"":"x"}">${f?"Disponible : "+esc(f.name):"En attente"}</span></div>`}).join("");
+  const p=pop();return (p.length?`<h3>Produits populaires</h3><div class=ch>${p.map(x=>`<button data-a="${esc(x)}" onclick="q=this.dataset.a;render()">${esc(x)}</button>`).join("")}</div>`:`<div class=em><i>🏪</i>Aucun commerce inscrit pour l'instant.<br>Les commerçants peuvent s'inscrire dans l'onglet Commerçant.</div>`)+(al?`<h3>Mes alertes</h3>${al}`:"")}
+ const r=rows();if(!r.length)return `<div class=em><i>🔎</i>Aucun commerce n'a « ${esc(q)} » pour l'instant.<br><br><button class=b onclick="addAl()">🔔 Me prévenir dès qu'il est disponible</button></div>`;
+ const best=Math.min(...r.map(x=>Math.min(...x.k.map(y=>x.s.p[y]))));
+ return r.map(({s,k})=>`<div class=c><div class=r><div class=r style="justify-content:flex-start"><div class=av>🏪</div><div><b>${esc(s.name)}</b><div class=m>${kt(s)}</div></div></div><span class="tag ${open(s)?"":"x"}">${open(s)?"Ouvert":"Fermé"} · ${s.open_hour}h-${s.close_hour}h</span></div>
+ ${k.map(x=>`<div class=r style="margin-top:10px"><span>${esc(x)} ${r.length>1&&s.p[x]==best?'<span class=best>💰 Moins cher</span>':""}</span><span class=p>${e(s.p[x])}</span></div>`).join("")}
+ <div class=r style="margin-top:12px"><span>${go_(s)}</span><span><button class=g onclick="tf('${s.id}')">${fav.includes(s.id)?"★":"☆"}</button> <button class=g data-a="${esc(k[0])}" onclick="add(this.dataset.a)">+ Liste</button></span></div></div>`).join("")}
+function addAl(){if(!alerts.includes(q.toLowerCase())){alerts.push(q.toLowerCase());SV("al",alerts)}toast("🔔 Alerte créée");q="";render()}
+function tf(i){fav.includes(i)?fav.splice(fav.indexOf(i),1):fav.push(i);SV("fav",fav);upd()}
+function add(x){if(!list.includes(x)){list.push(x);SV("list",list)}toast("Ajouté à ta liste ✓");render()}
+function upd(){document.getElementById("res").innerHTML=res()}
+const chip=(on,l,f)=>`<button class="${on?"on":""}" onclick="${f};render()">${l}</button>`;
+const sv=()=>`<div class=sb><input id=q placeholder="🔍 Chercher un produit (ex : harissa)" value="${esc(q)}" oninput="q=this.value;upd()" list=dl>${dl()}</div>
+ <div class=ch>${chip(LS("push",0),"🔔 Alertes promos","pushOn()")}${chip(!!pos,pos?"📍 Position active":"📍 Me localiser","loc()")}${chip(onlyOpen,"Ouverts","onlyOpen=!onlyOpen")}${chip(onlyFav,"★ Favoris","onlyFav=!onlyFav")}${chip(byDist,byDist?"Tri : distance":"Tri : prix","byDist=!byDist")}</div><div id=res>${res()}</div>`;
+function combos(){const out=[],n=S.length,cost=c=>{let t=0;for(const it of list){const v=c.map(i=>S[i].p[it]).filter(x=>x!=null);if(!v.length)return null;t+=Math.min(...v)}return t};
+ for(let a=0;a<n;a++){let c=cost([a]);if(c!=null)out.push({c:[a],t:c});for(let b=a+1;b<n;b++){c=cost([a,b]);if(c!=null)out.push({c:[a,b],t:c});for(let d=b+1;d<n;d++){c=cost([a,b,d]);if(c!=null)out.push({c:[a,b,d],t:c})}}}
+ const best={};out.forEach(o=>{const k=o.c.length;if(!best[k]||o.t<best[k].t)best[k]=o});return Object.values(best)}
+const ref=()=>list.reduce((a,it)=>a+Math.max(0,...S.map(s=>s.p[it]||0)),0);
+function lv(){const cs=list.length?combos():[];
+ return `<h3>📝 Ma liste de courses</h3><div class=sel><input id=n placeholder="Ajouter un produit" list=dl><button class=b style="flex:none" onclick="let v=n.value.trim().toLowerCase();if(v&&!list.includes(v)){list.push(v);SV('list',list)}render()">+</button></div>${dl()}
+ <div class=c>${list.map((x,i)=>`<div class=r style="padding:5px 0"><label class="${done.includes(x)?"done":""}"><input type=checkbox style="width:auto;margin-right:8px" ${done.includes(x)?"checked":""} data-a="${esc(x)}" onchange="done.includes(this.dataset.a)?done.splice(done.indexOf(this.dataset.a),1):done.push(this.dataset.a);SV('done',done);render()">${esc(x)}</label><button class=g onclick="list.splice(${i},1);SV('list',list);render()">✕</button></div>`).join("")||"<span class=m>Ta liste est vide</span>"}</div>
+ <h3>💡 Meilleures options</h3>`+(cs.length?cs.map(o=>`<div class=c><div class=r><b>${o.c.length} magasin${o.c.length>1?"s":""}</b><span class=p>${e(o.t)}</span></div><div class=m>💰 Tu économises ${e(ref()-o.t)} vs le plus cher</div>
+ ${o.c.map(i=>{const s=S[i],mine=list.filter(it=>{const b=Math.min(...o.c.map(j=>S[j].p[it]??1e9));return s.p[it]==b});return `<div class=r style="margin-top:10px"><div><b>${esc(s.name)}</b><div class=m>${esc(mine.join(", "))} ${kt(s)}</div></div>${go_(s)}</div>`}).join("")}</div>`).join(""):`<div class=em><i>🧺</i>${list.length?"Aucune combinaison de 3 commerces maximum ne couvre ta liste.":"Ajoute des produits pour voir les meilleures options."}</div>`)}
+function left(d){const m=Math.round((new Date(d)-new Date())/6e4);return m>=60?Math.floor(m/60)+"h"+String(m%60).padStart(2,"0"):m+" min"}
+function pv(){return `<h3>🏷️ Promos anti-gaspi</h3>`+(PR.length?PR.map(p=>`<div class=c><div class=r><div class=r style="justify-content:flex-start"><div class=av>🥖</div><div><b>${esc(p.title)}</b><div class=m>${esc(p.shops?p.shops.name:"")} ${p.shops?kt(p.shops):""}</div></div></div><span class="tag x">-${Math.round((1-p.new_price/p.old_price)*100)}%</span></div>
+ <div class=r style="margin-top:10px"><span class=m>⏳ Se termine dans ${left(p.ends_at)}</span><span><s class=m>${e(p.old_price)}</s> <span class=p>${e(p.new_price)}</span></span></div><div style="margin-top:10px">${go_(p.shops)}</div></div>`).join(""):`<div class=em><i>🌿</i>Aucune promo en cours.<br>Les commerçants publient leurs invendus ici.</div>`)}
+async function auth(m){if(!ue.value||!up.value)return toast("Remplis l'e-mail et le mot de passe");const r=m?await sb.auth.signUp({email:ue.value,password:up.value}):await sb.auth.signInWithPassword({email:ue.value,password:up.value});if(r.error)return toast(r.error.message);if(m&&!r.data.session)return toast("Compte créé : confirme ton e-mail");init()}
+async function mk(){const n=sn.value.trim();if(!n)return toast("Donne un nom à ton commerce");const r=await sb.from("shops").insert({name:n,lat:pos?pos.lat:null,lng:pos?pos.lng:null,open_hour:+so.value||8,close_hour:+sc.value||20});if(r.error)return toast(r.error.message);toast("Commerce créé 🎉");init()}
+async function ap(){const n=pn.value.trim().toLowerCase(),v=+pv_.value;if(!n||!(v>0))return toast("Nom et prix requis");const r=await sb.from("products").insert({shop_id:my().id,name:n,price:v});if(r.error)return toast(r.error.message);toast("Produit ajouté ✓");init()}
+async function ep(id,o){const v=+String(prompt("Nouveau prix (€)",o)).replace(",",".");if(v>0){await sb.from("products").update({price:v}).eq("id",id);toast("Prix modifié ✓");init()}}
+async function dp(id){if(confirm("Supprimer ce produit ?")){await sb.from("products").delete().eq("id",id);init()}}
+async function dpr(id){await sb.from("promos").delete().eq("id",id);init()}
+async function pp(){const o=+po.value,n=+pn2.value;if(!pt.value||!o||!(n>0)||n>=o)return toast("Titre + prix promo inférieur au prix normal");const d=new Date();d.setHours(+ph.value||20,0,0,0);if(d<new Date())d.setDate(d.getDate()+1);const r=await sb.from("promos").insert({shop_id:my().id,title:pt.value,old_price:o,new_price:n,ends_at:d.toISOString()});if(r.error)return toast(r.error.message);toast("🏷️ Promo publiée");init()}
+function mv(){if(!me)return `<h3>🏪 Espace commerçant</h3><div class=c><p class=m style="margin-top:0">Inscris ton commerce gratuitement et montre tes prix aux clients du quartier.</p><input id=ue type=email placeholder="E-mail"><input id=up type=password placeholder="Mot de passe (6 caractères min.)"><div class=sel style="margin-top:10px"><button class=b onclick="auth(false)">Connexion</button><button class=g onclick="auth(true)">Créer un compte</button></div></div>`;
+ const s=my(),out=`<div class=r style="margin-top:14px"><span class=m>${esc(me.email)}</span><button class=g onclick="sb.auth.signOut().then(init)">Déconnexion</button></div>`;
+ if(!s)return out+`<h3>Crée ton commerce</h3><div class=c><input id=sn placeholder="Nom du commerce"><div class=sel><input id=so type=number placeholder="Ouvre (h)" value=8><input id=sc type=number placeholder="Ferme (h)" value=20></div><div class=sel style="margin-top:10px"><button class=g onclick="loc()">${pos?"📍 Position enregistrée":"📍 Utiliser ma position"}</button><button class=b onclick="mk()">Créer</button></div></div>`;
+ const mp=PR.filter(p=>p.shop_id==s.id);
+ return out+`<h3>🏪 ${esc(s.name)}</h3><div class=c>${(s.products||[]).map(x=>`<div class=r style="padding:6px 0"><span>${esc(x.name)}</span><span><b class=p onclick="ep('${x.id}',${x.price})">${e(x.price)} ✏️</b> <button class=g onclick="dp('${x.id}')">✕</button></span></div>`).join("")||"<span class=m>Aucun produit : ajoute le premier ci-dessous</span>"}</div>
+ <div class=c><b>➕ Ajouter un produit</b><div class=sel style="margin-top:6px"><input id=pn placeholder="Produit"><input id=pv_ type=number step=0.01 placeholder="Prix €"></div><button class=b style="margin-top:8px" onclick="ap()">Ajouter</button></div>
+ <div class=c><b>🏷️ Promo sur invendus</b><input id=pt placeholder="Ex : 10 baguettes"><div class=sel><input id=po type=number step=0.1 placeholder="Prix normal"><input id=pn2 type=number step=0.1 placeholder="Prix promo"><input id=ph type=number placeholder="Jusqu'à (h)" value=19></div><button class=b style="margin-top:8px" onclick="pp()">Publier</button>
+ ${mp.map(p=>`<div class=r style="margin-top:10px"><span class=m>${esc(p.title)} · ${e(p.new_price)}</span><button class=g onclick="dpr('${p.id}')">✕</button></div>`).join("")}</div>`}
+const VAPID="BPCqlJdW2NWGHaCovcX5h9nmSOGMmydtbHQtTj6nh7YSngxEIhOIt0IPclfbMnt3rK3LYpKFnHPPnKQqITObReE",RAD=3;
+const b64=s=>{const r=atob((s+"=".repeat((4-s.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
+async function pushOn(){
+ if(!("serviceWorker" in navigator)||!("PushManager" in window))return toast("Notifications non supportées ici (sur iPhone : ajoute d'abord l'appli à l'écran d'accueil)");
+ if(!pos)await new Promise(r=>navigator.geolocation.getCurrentPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};r()},()=>r()));
+ if(!pos)return toast("Active ta position pour recevoir les promos proches");
+ if(await Notification.requestPermission()!=="granted")return toast("Notifications refusées");
+ try{const reg=await navigator.serviceWorker.register("sw.js");await navigator.serviceWorker.ready;
+ const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(VAPID)}),j=sub.toJSON();
+ const r=await sb.from("push_subs").insert({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,lat:pos.lat,lng:pos.lng,radius_km:RAD});
+ if(r.error&&r.error.code!=="23505")return toast(r.error.message);
+ SV("push",1);toast("🔔 Alertes activées dans un rayon de "+RAD+" km");render()}catch(x){toast("Erreur : "+x.message)}}
+const T=[["🔍","Recherche"],["📝","Ma liste"],["🏷️","Promos"],["🏪","Commerçant"]];
+function go(i){tab=i;render();scrollTo(0,0)}
+function render(){nav.innerHTML=T.map((x,i)=>`<button class="${tab==i?"on":""}" onclick="go(${i})"><i>${x[0]}</i>${x[1]}${i==1&&list.length?`<b>${list.length}</b>`:""}</button>`).join("");
+ app.innerHTML=loading?'<div class=sk></div><div class=sk></div><div class=sk></div>':[sv,lv,pv,mv][tab]()}
+render();init();
+</script></body></html>
